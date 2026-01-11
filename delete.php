@@ -21,7 +21,7 @@ if ($id <= 0) {
 }
 
 $pdo = db_conn();
-$sql = 'SELECT * FROM bio_list WHERE id = :id';
+$sql = 'DELETE FROM bio_list WHERE id = :id';
 $stmt = $pdo->prepare($sql);
 $stmt->bindValue(':id', $id, PDO::PARAM_INT);
 $stmt->execute();
