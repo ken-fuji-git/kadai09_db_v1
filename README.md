@@ -18,6 +18,49 @@ https://fujiwarakenta.sakura.ne.jp/kadai09_db_v1/list.php
 - 登録データ自体には触らず、一時的にセッションで変換テキストを保持します。
 - フラッシュの機能を使って、登録や入力エラー時にテキストで表示できるようになったので親切なUIになっていると思います。
 
+## flashについて
+- flash：次の1回だけ表示するための一時メッセージ/一時データ
+- redirect すると、POSTの結果（エラー・成功・入力値）はそのままでは次ページに渡らない！
+　そこで flash を使って
+	•	成功メッセージ（「更新しました」等）
+	•	エラーメッセージ（「必須です」等）
+	•	入力復元データ（old）
+　を redirectをまたいで1回だけ渡すのが目的！！
+- **セッション（$_SESSION）**に入れておき、次のページ表示（GET）で取り出したら 即削除！
+~~~
+function set_flash($key, $value){
+    $_SESSION['flash'][$key] = $value;
+}
+
+function get_flash($key, $default = null){
+    if (!isset($_SESSION['flash'][$key])) return $default;
+    $v = $_SESSION['flash'][$key];  //取り出してから
+    unset($_SESSION['flash'][$key]);//削除
+    return $v;
+}
+
+//update.php の例（バリデーションNGの時）
+set_flash('old', [
+   'name' => ($_POST['name'] ?? ''),
+   'age' => ($_POST['age'] ?? ''),
+   'gender' => ($_POST['gender'] ?? ''),
+   'email' => ($_POST['email'] ?? ''),
+   'complaint_text' => ($_POST['complaint_text'] ?? ''),
+]);
+
+//成功時
+set_flash('success', '更新しました。');
+redirect('list.php');
+
+//ID不正
+//$_POST['id'] が送られていればそれを使う送られていなければ 0 を使う（＝不正扱いにできる）
+$id = ($_POST['id'] ?? 0);
+if ($id <= 0) {
+  set_flash('error', 'IDが不正です。');
+  redirect('list.php');
+}
+~~~
+
 ## 1)登録フロー（index → insert → DB → list）
 ~~~
 [ユーザー] 
@@ -39,7 +82,7 @@ redirect(list.php)
    ▼
 [list.php] ⑤ 一覧表示（原文はそのまま表示）
 ~~~
- - 	•	DBに保存されるのは原文（complaint_text）だけ
+ - DBに保存されるのは原文（complaint_text）だけ
 
 ## 2)一覧表示フロー（list.php GET：表示だけ）
 ~~~
